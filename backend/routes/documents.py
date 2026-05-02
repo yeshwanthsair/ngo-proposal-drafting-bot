@@ -112,6 +112,50 @@ async def get_stats():
     )
 
 
+@router.delete("/delete/{filename}")
+async def delete_document(filename: str):
+    """
+    Delete a specific document from the knowledge base.
+    Removes all chunks associated with that document.
+    """
+    try:
+        kb = get_knowledge_base()
+        vs = kb._get_vector_store()
+        collection = vs._collection
+        
+        # Get all items with this source filename
+        results = collection.get(
+            where={"source": filename},
+            include=["metadatas"]
+        )
+        
+        if not results["ids"]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document '{filename}' not found in knowledge base"
+            )
+        
+        # Delete all chunks from this document
+        collection.delete(ids=results["ids"])
+        
+        logger.info(f"Deleted {len(results['ids'])} chunks from document '{filename}'")
+        
+        return {
+            "message": f"Successfully deleted '{filename}' ({len(results['ids'])} chunks removed)",
+            "success": True,
+            "chunks_deleted": len(results["ids"])
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting document: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete document: {str(e)}"
+        )
+
+
 @router.delete("/clear")
 async def clear_knowledge_base():
     """

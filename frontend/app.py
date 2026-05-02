@@ -24,6 +24,27 @@ st.set_page_config(
 
 # ── Helper functions ────────────────────────────────────────────────────────────
 
+def api_delete(endpoint: str) -> dict | None:
+    """Make a DELETE request to the backend API."""
+    try:
+        resp = requests.delete(f"{API_BASE}{endpoint}", timeout=30)
+        resp.raise_for_status()
+        return resp.json()
+    except requests.exceptions.ConnectionError:
+        st.error("❌ Cannot connect to backend. Make sure FastAPI is running on port 8000.")
+        return None
+    except requests.exceptions.HTTPError as e:
+        try:
+            detail = e.response.json().get("detail", str(e))
+        except Exception:
+            detail = str(e)
+        st.error(f"API error: {detail}")
+        return None
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
+        return None
+
+
 def api_get(endpoint: str) -> dict | None:
     """Make a GET request to the backend API."""
     try:
@@ -259,7 +280,16 @@ elif page == "📋 Knowledge Base":
 
     if doc_list and doc_list.get("documents"):
         for doc in doc_list["documents"]:
-            st.write(f"✅ {doc}")
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"✅ {doc}")
+            with col2:
+                if st.button("🗑️", key=f"delete_{doc}", help=f"Delete {doc}"):
+                    with st.spinner(f"Deleting {doc}..."):
+                        result = api_delete(f"/documents/delete/{doc}")
+                        if result:
+                            st.success(f"Deleted {doc}")
+                            st.rerun()
     else:
         st.info("No documents in the knowledge base yet. Go to **Upload Documents** to add some.")
 
