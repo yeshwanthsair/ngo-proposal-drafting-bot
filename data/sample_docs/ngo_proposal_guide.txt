@@ -1,0 +1,95 @@
+NGO GRANT PROPOSAL WRITING GUIDE
+=================================
+
+INTRODUCTION
+------------
+A grant proposal is a formal document submitted to a funding organization (donor) requesting financial support for a specific project or program. For NGOs, writing effective proposals is critical to securing funding for their mission-driven work.
+
+STANDARD PROPOSAL STRUCTURE
+----------------------------
+
+1. COVER PAGE
+   - Organization name and logo
+   - Project title
+   - Funding amount requested
+   - Project duration
+   - Contact information
+   - Date of submission
+
+2. EXECUTIVE SUMMARY
+   - Brief overview of the organization (2-3 sentences)
+   - Problem statement summary
+   - Proposed solution
+   - Total budget requested
+   - Expected impact
+   Length: 1 page maximum
+
+3. ORGANIZATIONAL BACKGROUND
+   - History and mission of the NGO
+   - Key programs and past achievements
+   - Relevant experience and expertise
+   - Governance structure
+   - Financial health indicators
+
+4. PROBLEM STATEMENT / NEEDS ASSESSMENT
+   - Clear description of the problem being addressed
+   - Evidence and data supporting the need
+   - Target population and geographic area
+   - Root causes of the problem
+   - Why this problem requires urgent attention
+
+5. PROJECT OBJECTIVES
+   - Overall goal (broad, long-term)
+   - Specific objectives (SMART: Specific, Measurable, Achievable, Relevant, Time-bound)
+   - Expected outcomes and outputs
+   - Theory of change
+
+6. PROJECT METHODOLOGY / IMPLEMENTATION PLAN
+   - Detailed activities for each objective
+   - Timeline and milestones
+   - Roles and responsibilities
+   - Partnerships and collaborations
+   - Risk assessment and mitigation
+
+7. MONITORING AND EVALUATION (M&E)
+   - Key performance indicators (KPIs)
+   - Data collection methods
+   - Evaluation framework
+   - Reporting schedule
+
+8. BUDGET
+   - Detailed line-item budget
+   - Budget narrative/justification
+   - Cost-effectiveness analysis
+   - Other funding sources (co-funding)
+
+9. SUSTAINABILITY PLAN
+   - How the project will continue after grant period
+   - Future funding strategies
+   - Community ownership plans
+
+10. ANNEXURES
+    - Organization registration documents
+    - Audited financial statements
+    - CVs of key personnel
+    - Letters of support from partners
+    - Previous project reports
+
+TIPS FOR SUCCESSFUL PROPOSALS
+------------------------------
+- Align your proposal with the donor's priorities and guidelines
+- Use clear, simple language (avoid jargon)
+- Provide concrete evidence and data
+- Show your organization's track record
+- Be realistic about what you can achieve
+- Proofread carefully before submission
+- Follow the donor's format exactly
+
+COMMON MISTAKES TO AVOID
+-------------------------
+- Vague objectives without measurable indicators
+- Unrealistic timelines or budgets
+- Ignoring donor guidelines
+- Lack of evidence for the problem
+- No sustainability plan
+- Missing required documents

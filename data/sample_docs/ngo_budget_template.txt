@@ -1,0 +1,88 @@
+NGO PROJECT BUDGET PLANNING GUIDE
+==================================
+
+BUDGET CATEGORIES FOR NGO PROJECTS
+------------------------------------
+
+1. PERSONNEL COSTS
+   - Project Manager: Full-time or part-time salary
+   - Field Officers/Community Workers
+   - Finance Officer
+   - M&E Officer
+   - Administrative Staff
+   Note: Include fringe benefits (health insurance, provident fund) typically 15-25% of salary
+
+2. CONSULTANCY FEES
+   - Technical experts
+   - Trainers and facilitators
+   - Evaluation consultants
+   - Legal/audit services
+
+3. TRAINING AND CAPACITY BUILDING
+   - Workshop venue rental
+   - Training materials and handouts
+   - Participant travel and accommodation
+   - Refreshments and meals
+   - Facilitator fees
+
+4. EQUIPMENT AND SUPPLIES
+   - Computers and peripherals
+   - Office furniture
+   - Field equipment
+   - Stationery and printing
+   - Communication devices
+
+5. TRAVEL AND TRANSPORTATION
+   - Staff field visits
+   - Vehicle hire or fuel costs
+   - Air travel (if applicable)
+   - Per diem allowances
+
+6. COMMUNICATION
+   - Phone and internet costs
+   - Postage and courier
+   - Website maintenance
+
+7. PROGRAM ACTIVITIES
+   - Community events
+   - Awareness campaigns
+   - Distribution of materials/kits
+   - Beneficiary support
+
+8. INDIRECT/OVERHEAD COSTS
+   - Office rent and utilities
+   - Organizational management
+   - Typically 10-20% of direct costs
+   - Some donors cap this at 15%
+
+BUDGET JUSTIFICATION TIPS
+--------------------------
+- Explain why each cost is necessary
+- Show how costs were calculated (unit cost × quantity)
+- Demonstrate value for money
+- Align costs directly to project activities
+- Show any in-kind contributions
+
+SAMPLE BUDGET FORMAT
+--------------------
+Item | Unit | Quantity | Unit Cost | Total Cost | Donor Funding | Own Contribution
+-----|------|----------|-----------|------------|---------------|----------------
+Project Manager | Month | 12 | 50,000 | 600,000 | 480,000 | 120,000
+Field Officers (2) | Month | 12 | 30,000 | 720,000 | 720,000 | 0
+Training Workshop | Event | 4 | 25,000 | 100,000 | 100,000 | 0
+...
+
+FINANCIAL MANAGEMENT REQUIREMENTS
+-----------------------------------
+- Maintain separate bank account for grant funds
+- Keep all receipts and invoices
+- Submit financial reports on schedule (monthly/quarterly)
+- Allow donor audits
+- Return unspent funds as per agreement
+- Follow procurement policies
+
+KEY FINANCIAL RATIOS DONORS LOOK FOR
+--------------------------------------
+- Program costs vs. administrative costs (aim for 70:30 or better)
+- Cost per beneficiary
+- Cost per outcome achieved
