@@ -144,13 +144,155 @@ if page == "💬 Chat / Q&A":
         })
 
     # Display chat history
-    for msg in st.session_state.messages:
+    for idx, msg in enumerate(st.session_state.messages):
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
-            if msg.get("sources"):
-                with st.expander("📎 Sources"):
-                    for src in msg["sources"]:
-                        st.caption(f"• {src}")
+            
+            # Add action buttons for assistant messages
+            if msg["role"] == "assistant":
+                col1, col2, col3 = st.columns([1, 1, 10])
+                
+                with col1:
+                    # Copy button
+                    if st.button("📋", key=f"copy_{idx}", help="Copy to clipboard"):
+                        st.code(msg["content"], language=None)
+                        st.success("✓ Copied!", icon="✅")
+                
+                with col2:
+                    # Regenerate button
+                    if st.button("🔄", key=f"regen_{idx}", help="Regenerate response"):
+                        # Find the user question that triggered this response
+                        if idx > 0 and st.session_state.messages[idx-1]["role"] == "user":
+                            user_question = st.session_state.messages[idx-1]["content"]
+                            
+                            # Remove this assistant message
+                            st.session_state.messages.pop(idx)
+                            
+                            # Regenerate
+                            with st.spinner("Regenerating..."):
+                                result = api_post("/chat/ask", json_data={
+                                    "question": user_question,
+                                    "session_id": "streamlit_session",
+                                })
+                            
+                            if result:
+                                answer = result.get("answer", "Sorry, I could not generate an answer.")
+                                sources = result.get("sources", [])
+                                
+                                st.session_state.messages.append({
+                                    "role": "assistant",
+                                    "content": answer,
+                                    "sources": sources,
+                                })
+                            st.rerun()
+                
+                # Show sources as clickable links
+                if msg.get("sources"):
+                    with st.expander("📎 Sources"):
+                        for src in msg["sources"]:
+                            col1, col2 = st.columns([4, 1])
+                            with col1:
+                                st.caption(f"• {src}")
+                            with col2:
+                                if st.button("👁️ View", key=f"view_src_{idx}_{src}"):
+                                    st.session_state["preview_doc"] = src
+                                    st.session_state["show_doc_modal"] = True
+                                    st.rerun()
+            
+            # Add edit button for user messages
+            elif msg["role"] == "user":
+                if st.button("✏️", key=f"edit_{idx}", help="Edit message"):
+                    st.session_state[f"editing_{idx}"] = True
+                    st.rerun()
+                
+                # Show edit input if editing
+                if st.session_state.get(f"editing_{idx}", False):
+                    edited_text = st.text_area(
+                        "Edit your message:",
+                        value=msg["content"],
+                        key=f"edit_input_{idx}",
+                        height=100
+                    )
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("💾 Save", key=f"save_{idx}"):
+                            # Update the message
+                            st.session_state.messages[idx]["content"] = edited_text
+                            st.session_state[f"editing_{idx}"] = False
+                            
+                            # Remove all messages after this one
+                            st.session_state.messages = st.session_state.messages[:idx+1]
+                            
+                            # Regenerate response
+                            with st.spinner("Generating new response..."):
+                                result = api_post("/chat/ask", json_data={
+                                    "question": edited_text,
+                                    "session_id": "streamlit_session",
+                                })
+                            
+                            if result:
+                                answer = result.get("answer", "Sorry, I could not generate an answer.")
+                                sources = result.get("sources", [])
+                                
+                                st.session_state.messages.append({
+                                    "role": "assistant",
+                                    "content": answer,
+                                    "sources": sources,
+                                })
+                            st.rerun()
+                    
+                    with col2:
+                        if st.button("❌ Cancel", key=f"cancel_{idx}"):
+                            st.session_state[f"editing_{idx}"] = False
+                            st.rerun()
+
+    # Document preview modal (shown when source is clicked)
+    if st.session_state.get("show_doc_modal") and st.session_state.get("preview_doc"):
+        preview_doc = st.session_state["preview_doc"]
+        st.divider()
+
+        col1, col2 = st.columns([5, 1])
+        with col1:
+            st.subheader(f"📖 {preview_doc}")
+        with col2:
+            if st.button("✖ Close", key="close_chat_preview"):
+                st.session_state.pop("show_doc_modal", None)
+                st.session_state.pop("preview_doc", None)
+                st.rerun()
+
+        with st.spinner("Loading document..."):
+            preview_data = api_get(f"/documents/preview/{preview_doc}")
+
+        if preview_data:
+            c1, c2 = st.columns(2)
+            c1.metric("Chunks", preview_data.get("total_chunks", 0))
+            c2.metric("Characters", len(preview_data.get("content", "")))
+
+            st.markdown(
+                f"""
+                <div style="
+                    background-color: #1e1e1e;
+                    border: 1px solid #444;
+                    border-radius: 8px;
+                    padding: 20px;
+                    height: 400px;
+                    overflow-y: auto;
+                    font-family: monospace;
+                    font-size: 14px;
+                    color: #ffffff;
+                    white-space: pre-wrap;
+                    line-height: 1.6;
+                ">{preview_data.get("content", "").replace("<", "&lt;").replace(">", "&gt;")}</div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            st.download_button(
+                label="⬇️ Download",
+                data=preview_data.get("content", ""),
+                file_name=preview_doc,
+                mime="text/plain",
+            )
 
     # Chat input
     if prompt := st.chat_input("Ask about NGO proposals, grant writing, or your uploaded documents..."):
@@ -282,14 +424,71 @@ elif page == "📋 Knowledge Base":
         for doc in doc_list["documents"]:
             col1, col2 = st.columns([4, 1])
             with col1:
-                st.write(f"✅ {doc}")
+                # Clickable document name — opens preview
+                if st.button(f"📄 {doc}", key=f"preview_{doc}", help="Click to preview document"):
+                    st.session_state["preview_doc"] = doc
             with col2:
                 if st.button("🗑️", key=f"delete_{doc}", help=f"Delete {doc}"):
                     with st.spinner(f"Deleting {doc}..."):
                         result = api_delete(f"/documents/delete/{doc}")
                         if result:
-                            st.success(f"Deleted {doc}")
+                            # Clear preview if deleted doc was open
+                            if st.session_state.get("preview_doc") == doc:
+                                st.session_state.pop("preview_doc", None)
+                            st.success(f"Deleted '{doc}'")
                             st.rerun()
+
+        # Document preview panel
+        if st.session_state.get("preview_doc"):
+            preview_doc = st.session_state["preview_doc"]
+            st.divider()
+
+            # Header with close button
+            col1, col2 = st.columns([5, 1])
+            with col1:
+                st.subheader(f"📖 {preview_doc}")
+            with col2:
+                if st.button("✖ Close", key="close_preview"):
+                    st.session_state.pop("preview_doc", None)
+                    st.rerun()
+
+            # Fetch document content
+            with st.spinner("Loading document..."):
+                preview_data = api_get(f"/documents/preview/{preview_doc}")
+
+            if preview_data:
+                # Stats row
+                c1, c2 = st.columns(2)
+                c1.metric("Chunks", preview_data.get("total_chunks", 0))
+                c2.metric("Characters", len(preview_data.get("content", "")))
+
+                # Full content in scrollable box
+                st.markdown(
+                    f"""
+                    <div style="
+                        background-color: #1e1e1e;
+                        border: 1px solid #444;
+                        border-radius: 8px;
+                        padding: 20px;
+                        height: 400px;
+                        overflow-y: auto;
+                        font-family: monospace;
+                        font-size: 14px;
+                        color: #ffffff;
+                        white-space: pre-wrap;
+                        line-height: 1.6;
+                    ">{preview_data.get("content", "").replace("<", "&lt;").replace(">", "&gt;")}</div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+                # Download button
+                st.download_button(
+                    label="⬇️ Download Content",
+                    data=preview_data.get("content", ""),
+                    file_name=preview_doc,
+                    mime="text/plain",
+                )
     else:
         st.info("No documents in the knowledge base yet. Go to **Upload Documents** to add some.")
 

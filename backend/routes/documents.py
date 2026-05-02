@@ -112,6 +112,58 @@ async def get_stats():
     )
 
 
+@router.get("/preview/{filename}")
+async def preview_document(filename: str):
+    """
+    Get the content/chunks of a specific document from the knowledge base.
+    """
+    try:
+        kb = get_knowledge_base()
+        vs = kb._get_vector_store()
+        collection = vs._collection
+
+        results = collection.get(
+            where={"source": filename},
+            include=["metadatas", "documents"]
+        )
+
+        if not results["ids"]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Document '{filename}' not found in knowledge base"
+            )
+
+        # Sort chunks by chunk_index
+        chunks = sorted(
+            zip(results["documents"], results["metadatas"]),
+            key=lambda x: x[1].get("chunk_index", 0)
+        )
+
+        full_text = "\n\n".join([chunk[0] for chunk in chunks])
+
+        return {
+            "filename": filename,
+            "total_chunks": len(results["ids"]),
+            "content": full_text,
+            "chunks": [
+                {
+                    "index": meta.get("chunk_index", i),
+                    "text": text,
+                }
+                for i, (text, meta) in enumerate(chunks)
+            ]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error previewing document: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to preview document: {str(e)}"
+        )
+
+
 @router.delete("/delete/{filename}")
 async def delete_document(filename: str):
     """
