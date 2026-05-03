@@ -186,18 +186,18 @@ if page == "💬 Chat / Q&A":
                                 })
                             st.rerun()
                 
-                # Show sources as clickable links
-                if msg.get("sources"):
+                # Show sources only if real documents were used
+                real_sources = [
+                    s for s in msg.get("sources", [])
+                    if "General Knowledge" not in s
+                ]
+                if real_sources:
                     with st.expander("📎 Sources"):
-                        for src in msg["sources"]:
-                            col1, col2 = st.columns([4, 1])
-                            with col1:
-                                st.caption(f"• {src}")
-                            with col2:
-                                if st.button("👁️ View", key=f"view_src_{idx}_{src}"):
-                                    st.session_state["preview_doc"] = src
-                                    st.session_state["show_doc_modal"] = True
-                                    st.rerun()
+                        for src in real_sources:
+                            if st.button(f"📄 {src}", key=f"view_src_{idx}_{src}"):
+                                st.session_state["preview_doc"] = src
+                                st.session_state["show_doc_modal"] = True
+                                st.rerun()
             
             # Add edit button for user messages
             elif msg["role"] == "user":
@@ -314,16 +314,26 @@ if page == "💬 Chat / Q&A":
                 sources = result.get("sources", [])
 
                 st.markdown(answer)
-                if sources:
-                    with st.expander("📎 Sources"):
-                        for src in sources:
-                            st.caption(f"• {src}")
 
-                # Save to history
+                # Show sources only if real documents were used
+                real_sources = [s for s in sources if "General Knowledge" not in s]
+                if real_sources:
+                    with st.expander("📎 Sources"):
+                        for src in real_sources:
+                            if st.button(f"📄 {src}", key=f"view_src_new_{src}"):
+                                st.session_state["preview_doc"] = src
+                                st.session_state["show_doc_modal"] = True
+                                st.rerun()
+
+                # Save to history — only save real sources
+                real_sources_to_save = [
+                    s for s in sources
+                    if "General Knowledge" not in s
+                ]
                 st.session_state.messages.append({
                     "role": "assistant",
                     "content": answer,
-                    "sources": sources,
+                    "sources": real_sources_to_save,
                 })
 
     # Clear chat button
