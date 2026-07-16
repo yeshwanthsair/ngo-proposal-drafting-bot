@@ -526,20 +526,27 @@ elif page == "📁 Upload Documents":
     st.divider()
     st.subheader("📄 Load Sample Documents")
     if st.button("📥 Load Sample NGO Documents"):
-        sample_dir = Path("./data/sample_docs")
+        # Resolve path relative to this file's location (works on Streamlit Cloud too)
+        sample_dir = Path(__file__).parent.parent / "data" / "sample_docs"
         sample_files = list(sample_dir.glob("*.txt")) + list(sample_dir.glob("*.pdf"))
         if not sample_files:
-            st.warning("No sample documents found in ./data/sample_docs/")
+            st.warning(f"No sample documents found. Looked in: `{sample_dir}`")
         else:
             loaded = 0
+            errors = []
             for sample_file in sample_files:
                 result = upload_document_direct(sample_file.name, sample_file.read_bytes())
                 if "error" not in result:
                     loaded += 1
+                    st.write(f"✅ **{sample_file.name}** → {result['chunks_created']} chunks")
+                else:
+                    errors.append(f"{sample_file.name}: {result['error']}")
             if loaded:
                 st.success(f"✅ Loaded {loaded} sample document(s)!")
                 st.cache_resource.clear()
                 st.rerun()
+            for err in errors:
+                st.error(f"❌ {err}")
 
 
 # ── Page: Knowledge Base ──────────────────────────────────────────────────────
