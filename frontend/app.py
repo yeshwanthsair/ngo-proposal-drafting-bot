@@ -613,7 +613,36 @@ elif page == "📋 Knowledge Base":
                 st.download_button("⬇️ Download", data=preview_data.get("content", ""),
                                    file_name=preview_doc, mime="text/plain")
     else:
-        st.info("No documents in the knowledge base yet. Go to **Upload Documents** to add some.")
+        st.info("No documents in the knowledge base yet. Upload documents or load sample docs below.")
+
+    st.divider()
+    st.subheader("📄 Load Sample Documents")
+    st.caption("Load one sample document at a time into the knowledge base.")
+
+    sample_dir = Path(__file__).parent.parent / "data" / "sample_docs"
+    sample_files = sorted(list(sample_dir.glob("*.txt")) + list(sample_dir.glob("*.pdf")))
+
+    if not sample_files:
+        st.warning(f"No sample documents found in: `{sample_dir}`")
+    else:
+        already_loaded = stats.get("documents", [])
+        for sample_file in sample_files:
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                if sample_file.name in already_loaded:
+                    st.markdown(f"✅ ~~{sample_file.name}~~ *(already loaded)*")
+                else:
+                    st.markdown(f"📄 **{sample_file.name}**")
+            with col2:
+                if sample_file.name not in already_loaded:
+                    if st.button("➕ Load", key=f"kb_load_{sample_file.name}"):
+                        with st.spinner(f"Loading {sample_file.name}..."):
+                            result = upload_document_direct(sample_file.name, sample_file.read_bytes())
+                        if "error" not in result:
+                            st.success(f"✅ Loaded **{sample_file.name}** → {result['chunks_created']} chunks")
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {result['error']}")
 
     st.divider()
     with st.expander("⚠️ Danger Zone"):
