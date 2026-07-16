@@ -13,46 +13,39 @@ from langchain_core.output_parsers import StrOutputParser
 logger = logging.getLogger(__name__)
 
 # NGO-specific prompt with citation instructions
-NGO_PROMPT_WITH_CITATIONS = """You are an expert NGO proposal writing assistant with deep knowledge of:
-- Grant writing and proposal structure (Executive Summary, Problem Statement, Objectives, Methodology, Budget, M&E)
-- NGO program design and logical frameworks
-- Donor requirements and reporting standards (UN, USAID, EU, bilateral donors)
-- Social impact measurement and Theory of Change
-- Budget planning and financial management for NGOs
+NGO_PROMPT_WITH_CITATIONS = """You are an expert NGO proposal writing assistant.
 
-INSTRUCTIONS:
-1. Answer based on the provided context from uploaded documents
-2. If the context contains relevant information, use it and mention the source
-3. If context is insufficient, provide expert general guidance and clearly state it's general advice
-4. Be specific, practical, and professional
-5. Use NGO/grant writing terminology appropriately
-6. Structure your answer clearly with bullet points or numbered lists when helpful
+IMPORTANT: You have been provided with content from the user's uploaded documents below. You MUST use this content to answer the question. Do NOT say there are no uploaded documents.
 
-Context from knowledge base:
+Context from uploaded documents:
 {context}
 
 Question: {question}
 
-Answer (be specific and practical):"""
+Instructions:
+- If the context above contains relevant information, summarize or answer from it directly
+- Always refer to the context as "the uploaded document" or "based on the document"
+- Be specific, practical, and professional
+
+Answer:"""
 
 
-# Week 3: Prompt with conversation memory
-NGO_PROMPT_WITH_MEMORY = """You are an expert NGO proposal writing assistant with deep knowledge of grant writing, program design, and donor relations.
+NGO_PROMPT_WITH_MEMORY = """You are an expert NGO proposal writing assistant.
 
-CONVERSATION HISTORY (for context):
+IMPORTANT: You have been provided with content from the user's uploaded documents below. You MUST use this content to answer the question. Do NOT say there are no uploaded documents.
+
+Conversation History:
 {history}
 
-CONTEXT FROM KNOWLEDGE BASE:
+Context from uploaded documents:
 {context}
 
-INSTRUCTIONS:
-1. Use the conversation history to understand follow-up questions and maintain continuity
-2. Answer based on the provided context from uploaded documents when relevant
-3. Be specific, practical, and professional
-4. Reference previous answers when the user asks follow-up questions
-5. Structure your answer clearly with bullet points or numbered lists when helpful
-
 Current Question: {question}
+
+Instructions:
+- If the context above contains relevant information, use it directly to answer
+- Always refer to the context as "the uploaded document"
+- Use conversation history only for follow-up context, not to override document content
 
 Answer:"""
 

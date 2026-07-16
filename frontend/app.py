@@ -95,6 +95,7 @@ def ask_question_direct(question: str, session_id: str, use_memory: bool) -> dic
     try:
         kb = get_kb()
         stats = kb.get_stats()
+        has_docs = stats.get("total_chunks", 0) > 0
 
         # Edge case check
         edge = handle_edge_cases(question, stats)
@@ -102,18 +103,16 @@ def ask_question_direct(question: str, session_id: str, use_memory: bool) -> dic
             return {"answer": edge, "sources": [], "citations": [], "chunks_used": 0,
                     "timestamp": get_current_timestamp()}
 
-        # Retrieve context
+        # Retrieve context from KB
         retrieval = retrieve_with_citations(question, kb, k=5)
 
-        # Always use KB context if documents exist, even if score is low
-        has_docs = stats.get("total_chunks", 0) > 0
-
-        if use_memory:
-            history = get_conversation_history(session_id, last_n=6)
-            result = answer_with_memory(question, retrieval, history)
-        elif has_docs:
-            # Use KB answer — pass context even if retrieval score was low
-            result = answer_question(question, retrieval)
+        if has_docs:
+            # Always use KB when documents exist
+            if use_memory:
+                history = get_conversation_history(session_id, last_n=4)
+                result = answer_with_memory(question, retrieval, history)
+            else:
+                result = answer_question(question, retrieval)
         else:
             result = answer_without_kb(question)
 
