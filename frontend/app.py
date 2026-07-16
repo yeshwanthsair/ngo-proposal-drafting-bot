@@ -525,28 +525,36 @@ elif page == "📁 Upload Documents":
 
     st.divider()
     st.subheader("📄 Load Sample Documents")
-    if st.button("📥 Load Sample NGO Documents"):
-        # Resolve path relative to this file's location (works on Streamlit Cloud too)
-        sample_dir = Path(__file__).parent.parent / "data" / "sample_docs"
-        sample_files = list(sample_dir.glob("*.txt")) + list(sample_dir.glob("*.pdf"))
-        if not sample_files:
-            st.warning(f"No sample documents found. Looked in: `{sample_dir}`")
-        else:
-            loaded = 0
-            errors = []
-            for sample_file in sample_files:
-                result = upload_document_direct(sample_file.name, sample_file.read_bytes())
-                if "error" not in result:
-                    loaded += 1
-                    st.write(f"✅ **{sample_file.name}** → {result['chunks_created']} chunks")
+    st.caption("Click a button to load one sample document at a time.")
+
+    # Resolve path relative to this file's location (works on Streamlit Cloud too)
+    sample_dir = Path(__file__).parent.parent / "data" / "sample_docs"
+    sample_files = sorted(list(sample_dir.glob("*.txt")) + list(sample_dir.glob("*.pdf")))
+
+    if not sample_files:
+        st.warning(f"No sample documents found. Looked in: `{sample_dir}`")
+    else:
+        # Get already loaded docs to show status
+        already_loaded = get_kb_stats_direct().get("documents", [])
+
+        for sample_file in sample_files:
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                if sample_file.name in already_loaded:
+                    st.markdown(f"✅ ~~{sample_file.name}~~ *(already loaded)*")
                 else:
-                    errors.append(f"{sample_file.name}: {result['error']}")
-            if loaded:
-                st.success(f"✅ Loaded {loaded} sample document(s)!")
-                st.cache_resource.clear()
-                st.rerun()
-            for err in errors:
-                st.error(f"❌ {err}")
+                    st.markdown(f"📄 **{sample_file.name}**")
+            with col2:
+                if sample_file.name not in already_loaded:
+                    if st.button("➕ Load", key=f"load_{sample_file.name}"):
+                        with st.spinner(f"Loading {sample_file.name}..."):
+                            result = upload_document_direct(sample_file.name, sample_file.read_bytes())
+                        if "error" not in result:
+                            st.success(f"✅ Loaded **{sample_file.name}** → {result['chunks_created']} chunks")
+                            st.cache_resource.clear()
+                            st.rerun()
+                        else:
+                            st.error(f"❌ {result['error']}")
 
 
 # ── Page: Knowledge Base ──────────────────────────────────────────────────────
