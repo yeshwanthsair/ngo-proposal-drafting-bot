@@ -58,6 +58,13 @@ def get_kb():
     return KnowledgeBase(persist_dir=persist_dir)
 
 
+def get_fresh_kb():
+    """Always get a fresh KB instance (used for upload/delete/clear)."""
+    persist_dir = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+    from backend.services.knowledge_base import KnowledgeBase
+    return KnowledgeBase(persist_dir=persist_dir)
+
+
 def get_kb_stats_direct() -> dict:
     """Return stats WITHOUT triggering model load — fast for sidebar."""
     try:
@@ -146,8 +153,11 @@ def upload_document_direct(filename: str, content: bytes) -> dict:
             return {"error": "No text found in document"}
 
         docs = chunk_text(raw_text, filename)
-        kb = get_kb()
+        # Use fresh KB instance so embeddings are loaded fresh
+        kb = get_fresh_kb()
         kb.add_documents(docs)
+        # Clear cached KB so next query sees the new document
+        st.cache_resource.clear()
         return {"filename": filename, "chunks_created": len(docs)}
     except Exception as e:
         return {"error": str(e)}
@@ -167,7 +177,7 @@ def generate_proposal_direct(data: dict, section: str) -> dict:
 def delete_document_direct(doc_name: str) -> dict:
     """Delete a document from knowledge base."""
     try:
-        kb = get_kb()
+        kb = get_fresh_kb()
         vs = kb._get_vector_store()
         collection = vs._collection
         results = collection.get(include=["metadatas"])
@@ -177,6 +187,7 @@ def delete_document_direct(doc_name: str) -> dict:
                 ids_to_delete.append(results["ids"][i])
         if ids_to_delete:
             collection.delete(ids=ids_to_delete)
+            st.cache_resource.clear()
             return {"deleted": doc_name, "chunks_removed": len(ids_to_delete)}
         return {"error": f"Document '{doc_name}' not found"}
     except Exception as e:
