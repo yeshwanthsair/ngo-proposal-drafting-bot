@@ -18,7 +18,9 @@ logger = logging.getLogger(__name__)
 COLLECTION_NAME = "ngo_knowledge_base"
 
 # Embedding model (free, runs locally)
-EMBEDDING_MODEL = "all-MiniLM-L6-v2"
+# all-MiniLM-L6-v2 = 90MB (slower on cloud)
+# paraphrase-MiniLM-L3-v2 = 60MB (faster, lighter)
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "paraphrase-MiniLM-L3-v2")
 
 
 def get_embeddings():
