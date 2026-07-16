@@ -1,11 +1,10 @@
 """
-LLM service - supports both Groq (API) and Ollama (local).
-Set LLM_PROVIDER in .env to switch between them.
+Week 3: Improved LLM service with conversation memory support.
+Supports Ollama (local) and Groq (API).
 """
 import os
-import time
 import logging
-from typing import List
+from typing import List, Dict
 
 from langchain_core.documents import Document
 from langchain_core.prompts import PromptTemplate
@@ -13,28 +12,82 @@ from langchain_core.output_parsers import StrOutputParser
 
 logger = logging.getLogger(__name__)
 
-NGO_SYSTEM_PROMPT = """You are an expert NGO proposal writing assistant with deep knowledge of:
-- Grant writing and proposal structure
-- NGO program design and implementation
-- Donor requirements and reporting standards
-- Social impact measurement
+# NGO-specific prompt with citation instructions
+NGO_PROMPT_WITH_CITATIONS = """You are an expert NGO proposal writing assistant with deep knowledge of:
+- Grant writing and proposal structure (Executive Summary, Problem Statement, Objectives, Methodology, Budget, M&E)
+- NGO program design and logical frameworks
+- Donor requirements and reporting standards (UN, USAID, EU, bilateral donors)
+- Social impact measurement and Theory of Change
+- Budget planning and financial management for NGOs
 
-Use the provided context from NGO documents to answer questions accurately.
-If the context does not contain enough information, say so clearly and provide general guidance.
-Always be helpful, professional, and focused on NGO/grant writing topics.
+INSTRUCTIONS:
+1. Answer based on the provided context from uploaded documents
+2. If the context contains relevant information, use it and mention the source
+3. If context is insufficient, provide expert general guidance and clearly state it's general advice
+4. Be specific, practical, and professional
+5. Use NGO/grant writing terminology appropriately
+6. Structure your answer clearly with bullet points or numbered lists when helpful
 
 Context from knowledge base:
 {context}
 
 Question: {question}
 
+Answer (be specific and practical):"""
+
+
+# Week 3: Prompt with conversation memory
+NGO_PROMPT_WITH_MEMORY = """You are an expert NGO proposal writing assistant with deep knowledge of grant writing, program design, and donor relations.
+
+CONVERSATION HISTORY (for context):
+{history}
+
+CONTEXT FROM KNOWLEDGE BASE:
+{context}
+
+INSTRUCTIONS:
+1. Use the conversation history to understand follow-up questions and maintain continuity
+2. Answer based on the provided context from uploaded documents when relevant
+3. Be specific, practical, and professional
+4. Reference previous answers when the user asks follow-up questions
+5. Structure your answer clearly with bullet points or numbered lists when helpful
+
+Current Question: {question}
+
 Answer:"""
 
 
-def get_llm():
-    provider = os.getenv("LLM_PROVIDER", "groq").lower()
+# Fallback prompt when no documents are uploaded
+NGO_FALLBACK_PROMPT = """You are an expert NGO proposal writing assistant with 15+ years of experience 
+in grant writing, program design, and donor relations.
 
-    if provider == "groq":
+Provide expert guidance on the following question. Be specific, practical, and professional.
+Use real-world NGO examples where helpful.
+
+Question: {question}
+
+Expert Answer:"""
+
+
+def get_llm():
+    """
+    Initialize LLM. Supports Ollama (local) and Groq (API).
+    Set LLM_PROVIDER in .env: 'ollama' or 'groq'
+    """
+    provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+
+    if provider == "ollama":
+        try:
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            raise ValueError("Run: pip install langchain-ollama")
+
+        model = os.getenv("OLLAMA_MODEL", "tinyllama")
+        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        logger.info(f"Using Ollama: {model}")
+        return ChatOllama(model=model, base_url=base_url, temperature=0.3)
+
+    elif provider == "groq":
         api_key = os.getenv("GROQ_API_KEY")
         if not api_key:
             raise ValueError(
@@ -45,55 +98,132 @@ def get_llm():
         logger.info(f"Using Groq: {model}")
         return ChatGroq(api_key=api_key, model_name=model, temperature=0.3)
 
-    elif provider == "ollama":
-        try:
-            from langchain_ollama import ChatOllama
-        except ImportError:
-            raise ValueError("Run: pip install langchain-ollama")
-        model = os.getenv("OLLAMA_MODEL", "llama3.2")
-        base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-        logger.info(f"Using Ollama: {model}")
-        return ChatOllama(model=model, base_url=base_url, temperature=0.3)
-
     else:
-        raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use 'groq' or 'ollama'.")
+        raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use 'ollama' or 'groq'.")
 
 
 def format_docs(docs: List[Document]) -> str:
+    """Combine retrieved document chunks into a single context string."""
     return "\n\n".join(doc.page_content for doc in docs)
 
 
-def answer_question(question: str, retriever) -> dict:
+def answer_question(question: str, retrieval_result: dict) -> dict:
+    """
+    Week 2: Answer with improved prompt and citation support.
+
+    Args:
+        question: User question
+        retrieval_result: Result from retrieve_with_citations()
+
+    Returns:
+        dict with 'answer', 'sources', 'citations'
+    """
     try:
         llm = get_llm()
+        context = retrieval_result.get("context", "")
+        sources = retrieval_result.get("sources", [])
+        citations = retrieval_result.get("citations", [])
+
         prompt = PromptTemplate(
-            template=NGO_SYSTEM_PROMPT,
+            template=NGO_PROMPT_WITH_CITATIONS,
             input_variables=["context", "question"],
         )
-        source_docs = retriever.invoke(question)
-        context = format_docs(source_docs)
+
         chain = prompt | llm | StrOutputParser()
         answer = chain.invoke({"context": context, "question": question})
-        sources = list({doc.metadata.get("source", "Unknown") for doc in source_docs})
-        return {"answer": answer, "sources": sources}
+
+        return {
+            "answer": answer,
+            "sources": sources,
+            "citations": citations,
+            "chunks_used": retrieval_result.get("total_used", 0),
+        }
+
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error answering question: {e}")
         raise
 
 
 def answer_without_kb(question: str) -> dict:
+    """
+    Week 2: Improved fallback answer when no documents uploaded.
+    Uses better prompt for general NGO guidance.
+    """
     try:
         llm = get_llm()
-        prompt = (
-            "You are an expert NGO proposal writing assistant.\n"
-            "Answer based on your general knowledge about NGO proposals.\n\n"
-            f"Question: {question}\n\nAnswer:"
+
+        prompt = PromptTemplate(
+            template=NGO_FALLBACK_PROMPT,
+            input_variables=["question"],
         )
-        response = llm.invoke(prompt)
+
+        chain = prompt | llm | StrOutputParser()
+        answer = chain.invoke({"question": question})
+
         return {
-            "answer": response.content,
-            "sources": ["General Knowledge (no documents in knowledge base)"],
+            "answer": answer,
+            "sources": [],
+            "citations": [],
+            "chunks_used": 0,
         }
+
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error(f"Error in fallback answer: {e}")
         raise
+
+
+def answer_with_memory(
+    question: str,
+    retrieval_result: dict,
+    conversation_history: List[Dict],
+) -> dict:
+    """
+    Week 3: Answer using conversation memory + knowledge base context.
+
+    Args:
+        question: Current user question
+        retrieval_result: Result from retrieve_with_citations()
+        conversation_history: List of previous messages [{role, content}]
+
+    Returns:
+        dict with 'answer', 'sources', 'citations', 'chunks_used'
+    """
+    try:
+        llm = get_llm()
+        context = retrieval_result.get("context", "")
+        sources = retrieval_result.get("sources", [])
+        citations = retrieval_result.get("citations", [])
+
+        # Format conversation history
+        if conversation_history:
+            history_lines = []
+            for msg in conversation_history:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                history_lines.append(f"{role}: {msg['content'][:300]}")
+            history_text = "\n".join(history_lines)
+        else:
+            history_text = "No previous conversation."
+
+        prompt = PromptTemplate(
+            template=NGO_PROMPT_WITH_MEMORY,
+            input_variables=["history", "context", "question"],
+        )
+
+        chain = prompt | llm | StrOutputParser()
+        answer = chain.invoke({
+            "history": history_text,
+            "context": context,
+            "question": question,
+        })
+
+        return {
+            "answer": answer,
+            "sources": sources,
+            "citations": citations,
+            "chunks_used": retrieval_result.get("total_used", 0),
+        }
+
+    except Exception as e:
+        logger.error(f"Error in answer_with_memory: {e}")
+        # Fallback to regular answer
+        return answer_question(question, retrieval_result)

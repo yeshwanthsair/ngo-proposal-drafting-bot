@@ -1,155 +1,203 @@
 # NGO Proposal Drafting Bot
 
-**Project Code:** PRJ-032  
-**Student:** Yeshwanth Sai R  
-**Reg No:** 411723104059  
-**Department:** CSE, PSVPEC  
+**Student:** Yeshwanth Sai R | **Reg No:** 411723104059 | **Project Code:** PRJ-032
+
+An AI-powered tool that helps NGOs draft grant proposals and project documents using FastAPI, LangChain, ChromaDB, and Streamlit.
 
 ---
 
-## Overview
+## 🚀 Quick Start
 
-An AI-powered tool that helps NGOs draft grant proposals and project documents from program details. Built with FastAPI, LangChain, Streamlit, and ChromaDB.
+### Prerequisites
+- Python 3.10+
+- [Ollama](https://ollama.com) installed and running
+
+### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Pull the LLM Model
+```bash
+ollama pull tinyllama
+```
+
+### 3. Start the Backend (Terminal 1)
+```bash
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### 4. Start the Frontend (Terminal 2)
+```bash
+streamlit run frontend/app.py --server.port 8501
+```
+
+### 5. Open the App
+- **Frontend:** http://localhost:8501
+- **API Docs:** http://localhost:8000/docs
 
 ---
 
-## Features
+## 📋 Features by Week
 
-- **Template-based drafting** – Generate structured proposals from input details
-- **Section/Chapter planner** – Organize proposals into logical sections
-- **Editable outputs** – Review and edit generated content
-- **Checklist generation** – Auto-generate submission checklists
-- **Exportable final text** – Download proposals as `.txt` or `.docx`
-- **Knowledge base Q&A** – Chat with uploaded NGO documents
+### ✅ Week 1 — Foundation
+- Document upload (PDF, TXT, DOCX)
+- ChromaDB vector store with semantic search
+- Basic Chat / Q&A interface
+- Ollama (TinyLlama) local LLM integration
+- HuggingFace sentence-transformers embeddings
+
+### ✅ Week 2 — Retrieval & Admin
+- Improved retrieval with relevance scoring
+- Chunk-level citations with source attribution
+- NGO-specific prompt tuning
+- Edge case handling (greetings, off-topic, empty queries)
+- Chat history logging (JSON)
+- Admin panel with KB refresh workflow
+- Human-readable timestamps
+
+### ✅ Week 3 — UX, Memory & Proposal Generator
+- **Conversation Memory** — context-aware multi-turn chat
+- **Proposal Draft Generator** — generate full NGO proposals from form inputs
+- **Section Generator** — generate individual sections (Executive Summary, Budget, M&E, etc.)
+- **Export** — download proposals as TXT or Markdown
+- **Checklist Generator** — submission checklist for grant proposals
+- **Access Control** — admin login with password protection
+- **Session Management** — track active sessions and message counts
+- **Improved Chat UX** — memory toggle, clear memory button
 
 ---
 
-## Tech Stack
-
-| Layer     | Technology                        |
-|-----------|-----------------------------------|
-| Backend   | FastAPI (Python)                  |
-| AI/LLM    | LangChain + Google Gemini / OpenAI|
-| Vector DB | ChromaDB                          |
-| Frontend  | Streamlit                         |
-| Embeddings| sentence-transformers             |
-
----
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
-ngo-proposal-bot/
+NGO_Proposal_Drafting_Bot/
 ├── backend/
-│   ├── main.py              # FastAPI app entry point
+│   ├── main.py                    # FastAPI app entry point
+│   ├── models/
+│   │   └── schemas.py             # Pydantic request/response models
 │   ├── routes/
-│   │   ├── chat.py          # Chat/Q&A endpoints
-│   │   ├── documents.py     # Document upload/parse endpoints
-│   │   └── proposals.py     # Proposal generation endpoints
+│   │   ├── chat.py                # Chat, memory, admin endpoints
+│   │   ├── documents.py           # Document upload/management
+│   │   └── proposals.py           # Proposal generation endpoints (Week 3)
 │   ├── services/
-│   │   ├── knowledge_base.py  # ChromaDB vector store logic
-│   │   ├── llm_service.py     # LangChain LLM integration
-│   │   └── document_parser.py # PDF/DOCX parsing
-│   └── models/
-│       └── schemas.py         # Pydantic models
+│   │   ├── knowledge_base.py      # ChromaDB vector store
+│   │   ├── llm_service.py         # Ollama LLM + prompts
+│   │   ├── retrieval_service.py   # Retrieval with citations
+│   │   ├── chat_logger.py         # Chat history logging
+│   │   ├── document_parser.py     # PDF/TXT/DOCX parsing
+│   │   ├── proposal_generator.py  # NGO proposal templates (Week 3)
+│   │   └── session_manager.py     # Session & access control (Week 3)
+│   └── utils/
+│       └── datetime_utils.py      # Human-readable timestamps
 ├── frontend/
-│   └── app.py               # Streamlit UI
+│   └── app.py                     # Streamlit UI (all pages)
 ├── data/
-│   └── sample_docs/         # Sample NGO documents
+│   ├── sample_docs/               # Sample NGO documents
+│   └── uploads/                   # Temp upload directory
+├── logs/
+│   └── chat_history.json          # Chat interaction logs
+├── chroma_db/                     # ChromaDB vector store (auto-created)
 ├── tests/
-│   ├── test_week1.py        # Week 1 test cases
-│   └── test_data/
-├── .env.example             # Environment variable template
+│   ├── test_week1.py
+│   ├── test_week2.py
+│   └── test_week3.py
+├── .env                           # Environment variables (never commit)
+├── .env.example                   # Example env file
 ├── requirements.txt
 └── README.md
 ```
 
 ---
 
-## Setup Instructions
+## ⚙️ Configuration (.env)
 
-### 1. Clone the repository
-```bash
-git clone <your-repo-url>
-cd ngo-proposal-bot
+```env
+# LLM Provider
+LLM_PROVIDER=ollama
+OLLAMA_MODEL=tinyllama
+OLLAMA_BASE_URL=http://localhost:11434
+
+# ChromaDB
+CHROMA_PERSIST_DIR=./chroma_db
+
+# Week 3: Admin Access
+ADMIN_PASSWORD=admin123
+
+# Debug
+DEBUG=True
 ```
-
-### 2. Create virtual environment
-```bash
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# Linux/Mac
-source venv/bin/activate
-```
-
-### 3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure environment variables
-```bash
-cp .env.example .env
-# Edit .env and add your API key
-```
-
-### 5. Run the backend
-```bash
-cd backend
-uvicorn main:app --reload --port 8000
-```
-
-### 6. Run the frontend (new terminal)
-```bash
-cd frontend
-streamlit run app.py
-```
-
-### 7. Access the app
-- Frontend: http://localhost:8501
-- API Docs: http://localhost:8000/docs
 
 ---
 
-## Week-by-Week Progress
+## 🧪 Running Tests
 
-### ✅ Week 1 – Knowledge Base & Basic Chat
-- [x] Project structure setup
-- [x] Document upload and parsing (PDF, TXT, DOCX)
-- [x] ChromaDB vector store integration
-- [x] Text chunking and embedding
-- [x] Basic Q&A chat interface
-- [x] FastAPI endpoints for documents and chat
-- [x] Streamlit UI with chat and upload tabs
+```bash
+# All tests
+python -m pytest tests/ -v
 
-### 🔲 Week 2 – Retrieval, Prompt Tuning & Citations
-- [ ] Improved retrieval with citations
-- [ ] Prompt engineering for NGO context
-- [ ] Admin document refresh workflow
-- [ ] Edge case and fallback handling
-
-### 🔲 Week 3 – UX, History & Final Polish
-- [ ] Chat history and logging
-- [ ] Proposal generation with templates
-- [ ] Export to DOCX
-- [ ] Checklist generation
-- [ ] Final documentation and demo
+# Week-specific tests
+python -m pytest tests/test_week1.py -v
+python -m pytest tests/test_week2.py -v
+python -m pytest tests/test_week3.py -v
+```
 
 ---
 
-## Test Cases
+## 📱 Application Pages
 
-See `tests/test_week1.py` for automated test cases covering:
-- Document loading and chunking
-- Vector store operations
-- API endpoint responses
-- Q&A baseline flow
+| Page | Description |
+|------|-------------|
+| 💬 Chat / Q&A | Ask questions, conversation memory, citations |
+| ✍️ Draft Proposal | Generate NGO proposals from form inputs |
+| 📁 Upload Documents | Upload PDF/TXT/DOCX to knowledge base |
+| 📋 Knowledge Base | View, preview, delete indexed documents |
+| 🔧 Admin Panel | Login, sessions, chat history, system tools |
 
 ---
 
-## Important Notes
+## 🔐 Admin Access
 
-- API keys are stored in `.env` (never committed to Git)
-- Uses free `sentence-transformers` embeddings (no paid API needed for embeddings)
-- Sample NGO documents included in `data/sample_docs/`
+Default password: **admin123**
+
+Change in `.env`:
+```env
+ADMIN_PASSWORD=Yeshwanth@2006
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology |
+|-----------|-----------|
+| Backend API | FastAPI |
+| Frontend | Streamlit |
+| LLM | Ollama (TinyLlama) |
+| Vector DB | ChromaDB |
+| Embeddings | HuggingFace sentence-transformers |
+| Document Parsing | LangChain, pypdf, python-docx |
+| Framework | LangChain |
+
+---
+
+## 📊 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/chat/ask` | Ask a question (with memory) |
+| GET | `/api/v1/chat/history` | Get chat history |
+| POST | `/api/v1/chat/admin/login` | Admin login |
+| POST | `/api/v1/chat/admin/refresh` | Refresh knowledge base |
+| POST | `/api/v1/chat/session/clear` | Clear conversation memory |
+| GET | `/api/v1/chat/sessions` | List active sessions |
+| POST | `/api/v1/documents/upload` | Upload document |
+| GET | `/api/v1/documents/list` | List documents |
+| DELETE | `/api/v1/documents/delete/{filename}` | Delete document |
+| POST | `/api/v1/proposals/generate` | Generate proposal section |
+| POST | `/api/v1/proposals/checklist` | Generate submission checklist |
+| GET | `/api/v1/proposals/sections` | List available sections |
+
+---
+
+*NGO Proposal Drafting Bot | PRJ-032 | Yeshwanth Sai R | 411723104059*
