@@ -616,9 +616,16 @@ elif page == "🔧 Admin Panel":
 
     st.subheader("🔐 Admin Access")
     if not st.session_state.get("admin_logged_in", False):
+
+        # ── Login Form ────────────────────────────────────────────────────────
         with st.form("admin_login_form"):
             password = st.text_input("Admin Password", type="password", placeholder="Enter admin password")
-            login_btn = st.form_submit_button("🔑 Login as Admin", type="primary")
+            col1, col2 = st.columns(2)
+            with col1:
+                login_btn = st.form_submit_button("🔑 Login as Admin", type="primary", use_container_width=True)
+            with col2:
+                request_btn = st.form_submit_button("📩 Request Admin Access", use_container_width=True)
+
         if login_btn:
             if verify_admin(password):
                 st.session_state["admin_logged_in"] = True
@@ -626,6 +633,92 @@ elif page == "🔧 Admin Panel":
                 st.rerun()
             else:
                 st.error("❌ Invalid password. Try again.")
+
+        if request_btn:
+            st.session_state["show_request_form"] = True
+
+        # ── Request Admin Access Form ─────────────────────────────────────────
+        if st.session_state.get("show_request_form", False):
+            st.divider()
+            st.subheader("📩 Request Admin Access")
+            st.caption("Fill in your details and your request will be sent to the administrator.")
+
+            with st.form("request_access_form"):
+                req_name  = st.text_input("Your Full Name *", placeholder="e.g., John Doe")
+                req_email = st.text_input("Your Email *", placeholder="e.g., john@example.com")
+                req_org   = st.text_input("Organization", placeholder="e.g., Hope Foundation")
+                req_reason = st.text_area("Reason for Access *",
+                                          placeholder="Why do you need admin access?",
+                                          height=100)
+                send_btn = st.form_submit_button("📤 Send Request", type="primary", use_container_width=True)
+                cancel_btn = st.form_submit_button("❌ Cancel", use_container_width=True)
+
+            if cancel_btn:
+                st.session_state["show_request_form"] = False
+                st.rerun()
+
+            if send_btn:
+                if not req_name or not req_email or not req_reason:
+                    st.error("❌ Please fill in: Name, Email, and Reason.")
+                else:
+                    # Send email via SMTP (Gmail)
+                    import smtplib
+                    from email.mime.text import MIMEText
+                    from email.mime.multipart import MIMEMultipart
+
+                    ADMIN_EMAIL   = "yeshwanthsair@gmail.com"
+                    SENDER_EMAIL  = os.getenv("SENDER_EMAIL", "")
+                    SENDER_PASS   = os.getenv("SENDER_PASSWORD", "")
+
+                    subject = f"[NGO Bot] Admin Access Request from {req_name}"
+                    body = f"""
+New Admin Access Request - NGO Proposal Drafting Bot
+=====================================================
+
+Name        : {req_name}
+Email       : {req_email}
+Organization: {req_org or 'Not provided'}
+Timestamp   : {get_current_timestamp()}
+
+Reason for Access:
+{req_reason}
+
+=====================================================
+To approve: Share the admin password with this user.
+To deny   : No action needed.
+                    """.strip()
+
+                    try:
+                        if SENDER_EMAIL and SENDER_PASS:
+                            msg = MIMEMultipart()
+                            msg["From"]    = SENDER_EMAIL
+                            msg["To"]      = ADMIN_EMAIL
+                            msg["Subject"] = subject
+                            msg.attach(MIMEText(body, "plain"))
+
+                            with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+                                server.login(SENDER_EMAIL, SENDER_PASS)
+                                server.sendmail(SENDER_EMAIL, ADMIN_EMAIL, msg.as_string())
+
+                            st.success(f"✅ Request sent to {ADMIN_EMAIL}! The admin will contact you at {req_email}.")
+                        else:
+                            # Fallback: show the request info so admin can note it manually
+                            st.warning("⚠️ Email not configured. Showing request details below.")
+                            st.info(f"""
+**Request Submitted:**
+- **Name:** {req_name}
+- **Email:** {req_email}
+- **Organization:** {req_org or 'N/A'}
+- **Reason:** {req_reason}
+
+📧 Please contact **{ADMIN_EMAIL}** directly with this information.
+                            """)
+
+                        st.session_state["show_request_form"] = False
+                    except Exception as e:
+                        st.error(f"❌ Failed to send email: {e}")
+                        st.info(f"Please contact the admin directly at **{ADMIN_EMAIL}** with your request.")
+
         st.info("💡 Default admin password is set in .env file: ADMIN_PASSWORD=yourpassword")
         st.stop()
 
