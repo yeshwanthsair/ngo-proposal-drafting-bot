@@ -71,35 +71,37 @@ Expert Answer:"""
 
 def get_llm():
     """
-    Initialize LLM. Supports Ollama (local) and Groq (API).
-    Set LLM_PROVIDER in .env: 'ollama' or 'groq'
+    Initialize LLM. Supports Groq (cloud) and Ollama (local).
+    - On Streamlit Cloud: set LLM_PROVIDER=groq and GROQ_API_KEY in secrets
+    - Locally: set LLM_PROVIDER=ollama (default)
     """
-    provider = os.getenv("LLM_PROVIDER", "ollama").lower()
+    # If GROQ_API_KEY is set, always use Groq (works on Streamlit Cloud)
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    provider = os.getenv("LLM_PROVIDER", "groq" if groq_api_key else "ollama").lower()
 
-    if provider == "ollama":
+    if provider == "groq":
+        if not groq_api_key:
+            raise ValueError(
+                "GROQ_API_KEY not set. Get a free key at https://console.groq.com "
+                "and add it to Streamlit Cloud Secrets: GROQ_API_KEY = 'your_key'"
+            )
+        from langchain_groq import ChatGroq
+        model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+        logger.info(f"Using Groq: {model}")
+        return ChatGroq(api_key=groq_api_key, model_name=model, temperature=0.3)
+
+    elif provider == "ollama":
         try:
             from langchain_ollama import ChatOllama
         except ImportError:
             raise ValueError("Run: pip install langchain-ollama")
-
         model = os.getenv("OLLAMA_MODEL", "tinyllama")
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         logger.info(f"Using Ollama: {model}")
         return ChatOllama(model=model, base_url=base_url, temperature=0.3)
 
-    elif provider == "groq":
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "GROQ_API_KEY not set. Get free key at https://console.groq.com"
-            )
-        from langchain_groq import ChatGroq
-        model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
-        logger.info(f"Using Groq: {model}")
-        return ChatGroq(api_key=api_key, model_name=model, temperature=0.3)
-
     else:
-        raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use 'ollama' or 'groq'.")
+        raise ValueError(f"Unknown LLM_PROVIDER: {provider}. Use 'groq' or 'ollama'.")
 
 
 def format_docs(docs: List[Document]) -> str:
