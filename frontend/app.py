@@ -184,11 +184,16 @@ def delete_document_direct(doc_name: str) -> dict:
 
 
 def clear_kb_direct() -> dict:
-    """Clear entire knowledge base."""
+    """Clear entire knowledge base directly via ChromaDB client."""
     try:
-        kb = get_kb()
-        kb.delete_collection()
-        # Reset cache
+        import chromadb
+        persist_dir = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+        client = chromadb.PersistentClient(path=persist_dir)
+        try:
+            client.delete_collection("ngo_knowledge_base")
+        except Exception:
+            pass  # Collection may not exist, that's fine
+        # Also clear the cached KB instance so it gets recreated fresh
         st.cache_resource.clear()
         return {"message": "Knowledge base cleared"}
     except Exception as e:
@@ -631,8 +636,11 @@ elif page == "📋 Knowledge Base":
         st.warning("Clearing the knowledge base will remove all indexed documents. This cannot be undone.")
         if st.button("🗑️ Clear Knowledge Base"):
             result = clear_kb_direct()
-            st.success("Knowledge base cleared.")
-            st.rerun()
+            if "error" in result:
+                st.error(f"❌ {result['error']}")
+            else:
+                st.success("✅ Knowledge base cleared.")
+                st.rerun()
 
 
 # ── Page: Admin Panel ─────────────────────────────────────────────────────────
