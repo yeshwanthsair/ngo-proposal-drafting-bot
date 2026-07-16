@@ -6,6 +6,14 @@ An AI-powered tool that helps NGOs draft grant proposals and project documents u
 
 ---
 
+## 🌐 Live Demo
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://yeshwanthsair-ngo-proposal-drafting-bot-frontendapp-wz0xku.streamlit.app/)
+
+👉 **Live App:** https://yeshwanthsair-ngo-proposal-drafting-bot-frontendapp-wz0xku.streamlit.app/
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites
