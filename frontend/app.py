@@ -93,7 +93,8 @@ def get_kb_stats_direct() -> dict:
 def ask_question_direct(question: str, session_id: str, use_memory: bool) -> dict:
     """Call backend services directly instead of HTTP."""
     try:
-        kb = get_kb()
+        # Always use fresh KB for querying to ensure we get latest data
+        kb = get_fresh_kb()
         stats = kb.get_stats()
         has_docs = stats.get("total_chunks", 0) > 0
 
@@ -103,11 +104,27 @@ def ask_question_direct(question: str, session_id: str, use_memory: bool) -> dic
             return {"answer": edge, "sources": [], "citations": [], "chunks_used": 0,
                     "timestamp": get_current_timestamp()}
 
-        # Retrieve context from KB
-        retrieval = retrieve_with_citations(question, kb, k=5)
-
         if has_docs:
-            # Always use KB when documents exist
+            # Retrieve context from KB
+            retrieval = retrieve_with_citations(question, kb, k=5)
+
+            # If still no chunks retrieved, force-get all chunks as context
+            if retrieval["total_used"] == 0:
+                all_results = kb.similarity_search(question, k=18)
+                from backend.services.retrieval_service import RELEVANCE_THRESHOLD
+                chunks = []
+                for doc, score in all_results:
+                    source = doc.metadata.get("source", "document")
+                    chunks.append({
+                        "content": doc.page_content,
+                        "source": source,
+                        "relevance_score": round(score, 3),
+                    })
+                context = "\n\n---\n\n".join(c["content"] for c in chunks)
+                sources = list({c["source"] for c in chunks})
+                retrieval = {"context": context, "sources": sources,
+                             "citations": [], "total_used": len(chunks)}
+
             if use_memory:
                 history = get_conversation_history(session_id, last_n=4)
                 result = answer_with_memory(question, retrieval, history)
