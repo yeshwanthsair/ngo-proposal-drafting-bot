@@ -86,7 +86,7 @@ def get_llm():
                 "and add it to Streamlit Cloud Secrets: GROQ_API_KEY = 'your_key'"
             )
         from langchain_groq import ChatGroq
-        model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+        model = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
         logger.info(f"Using Groq: {model}")
         return ChatGroq(api_key=groq_api_key, model_name=model, temperature=0.3)
 
