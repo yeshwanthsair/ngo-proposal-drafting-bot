@@ -9,7 +9,8 @@ from langchain_core.documents import Document
 logger = logging.getLogger(__name__)
 
 # Minimum relevance score to include a chunk (0.0 - 1.0)
-RELEVANCE_THRESHOLD = 0.3
+# Lowered to 0.1 to be more inclusive — better to include low-relevance chunks than miss documents
+RELEVANCE_THRESHOLD = 0.1
 
 
 def retrieve_with_citations(

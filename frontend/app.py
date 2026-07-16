@@ -105,15 +105,17 @@ def ask_question_direct(question: str, session_id: str, use_memory: bool) -> dic
         # Retrieve context
         retrieval = retrieve_with_citations(question, kb, k=5)
 
-        # Get conversation history if memory enabled
+        # Always use KB context if documents exist, even if score is low
+        has_docs = stats.get("total_chunks", 0) > 0
+
         if use_memory:
             history = get_conversation_history(session_id, last_n=6)
             result = answer_with_memory(question, retrieval, history)
+        elif has_docs:
+            # Use KB answer — pass context even if retrieval score was low
+            result = answer_question(question, retrieval)
         else:
-            if retrieval["total_used"] > 0:
-                result = answer_question(question, retrieval)
-            else:
-                result = answer_without_kb(question)
+            result = answer_without_kb(question)
 
         # Save to memory
         add_to_conversation(session_id, "user", question)
