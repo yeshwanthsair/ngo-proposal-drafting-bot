@@ -501,7 +501,16 @@ elif page == "📁 Upload Documents":
     st.caption("Upload NGO documents, grant templates, or reference materials.")
     st.info("**Supported formats:** PDF, TXT, DOCX  \n**Max file size:** 10MB")
 
-    uploaded_files = st.file_uploader("Choose files to upload", type=["pdf", "txt", "docx", "doc"], accept_multiple_files=True)
+    # Use a key tied to session state so we can reset the uploader after upload
+    if "uploader_key" not in st.session_state:
+        st.session_state.uploader_key = 0
+
+    uploaded_files = st.file_uploader(
+        "Choose files to upload",
+        type=["pdf", "txt", "docx", "doc"],
+        accept_multiple_files=True,
+        key=f"uploader_{st.session_state.uploader_key}",
+    )
 
     if uploaded_files:
         if st.button("📤 Upload to Knowledge Base", type="primary"):
@@ -520,6 +529,8 @@ elif page == "📁 Upload Documents":
                 st.success(f"✅ Processed {len(results)} file(s) successfully!")
                 for r in results:
                     st.write(f"• **{r['filename']}** → {r['chunks_created']} chunks created")
+                # Reset the uploader by changing its key
+                st.session_state.uploader_key += 1
                 st.cache_resource.clear()
                 st.rerun()
 
