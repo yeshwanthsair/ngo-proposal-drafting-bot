@@ -50,20 +50,37 @@ def format_timestamp_for_display(ts: str) -> str:
         return str(ts)[:19] if len(str(ts)) > 19 else str(ts)
 
 
-@st.cache_resource
+@st.cache_resource(show_spinner=False)
 def get_kb():
-    """Cached knowledge base instance."""
+    """Cached knowledge base instance — loaded lazily, not at startup."""
     persist_dir = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
     from backend.services.knowledge_base import KnowledgeBase
     return KnowledgeBase(persist_dir=persist_dir)
 
 
 def get_kb_stats_direct() -> dict:
+    """Return stats WITHOUT triggering model load — fast for sidebar."""
     try:
-        kb = get_kb()
-        return kb.get_stats()
+        persist_dir = os.getenv("CHROMA_PERSIST_DIR", "./chroma_db")
+        import chromadb
+        client = chromadb.PersistentClient(path=persist_dir)
+        try:
+            collection = client.get_collection("ngo_knowledge_base")
+            count = collection.count()
+            if count > 0:
+                results = collection.get(include=["metadatas"])
+                sources = set()
+                for meta in results.get("metadatas", []):
+                    if meta and "source" in meta:
+                        sources.add(meta["source"])
+                return {"total_documents": len(sources), "total_chunks": count,
+                        "collection_name": "ngo_knowledge_base", "documents": list(sources)}
+        except Exception:
+            pass
+        return {"total_documents": 0, "total_chunks": 0,
+                "collection_name": "ngo_knowledge_base", "documents": []}
     except Exception:
-        return {"total_documents": 0, "total_chunks": 0, "collection_name": "N/A"}
+        return {"total_documents": 0, "total_chunks": 0, "collection_name": "N/A", "documents": []}
 
 
 def ask_question_direct(question: str, session_id: str, use_memory: bool) -> dict:
